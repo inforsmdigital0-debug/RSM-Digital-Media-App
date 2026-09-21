@@ -13,18 +13,26 @@ jobs:
 
       - name: Extract Android project
         run: |
-          mkdir project
+          mkdir -p project
           unzip -q RSM_Digital_Media_FINAL_SOURCE.zip -d project
 
       - name: Find Android project
+        shell: bash
         run: |
-          SETTINGS=$(find project -name settings.gradle -o -name settings.gradle.kts | head -1)
-          if [ -z "$SETTINGS" ]; then
-            echo "ERROR: settings.gradle not found"
+          GRADLEW=$(find project -type f -name "gradlew" | head -n 1)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: gradlew file not found in the ZIP file."
+            echo "Please make sure the Android project contains gradlew."
             exit 1
           fi
-          echo "Found project: $SETTINGS"
-          echo "PROJECT_DIR=$(dirname "$SETTINGS")" >> "$GITHUB_ENV"
+
+          PROJECT_DIR=$(dirname "$GRADLEW")
+
+          echo "Found Gradle wrapper:"
+          echo "$GRADLEW"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -42,4 +50,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RSM-Digital-Media-APK
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: |
+            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
