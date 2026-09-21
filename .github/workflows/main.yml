@@ -19,18 +19,17 @@ jobs:
       - name: Find Android project
         shell: bash
         run: |
-          GRADLEW=$(find project -type f -name "gradlew" | head -n 1)
+          SETTINGS=$(find project -type f -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
 
-          if [ -z "$GRADLEW" ]; then
-            echo "ERROR: gradlew file not found in the ZIP file."
-            echo "Please make sure the Android project contains gradlew."
+          if [ -z "$SETTINGS" ]; then
+            echo "ERROR: settings.gradle not found."
             exit 1
           fi
 
-          PROJECT_DIR=$(dirname "$GRADLEW")
+          PROJECT_DIR=$(dirname "$SETTINGS")
 
-          echo "Found Gradle wrapper:"
-          echo "$GRADLEW"
+          echo "Android project found at:"
+          echo "$PROJECT_DIR"
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
@@ -40,11 +39,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
       - name: Build Debug APK
         run: |
           cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
